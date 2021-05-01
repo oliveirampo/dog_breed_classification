@@ -16,6 +16,116 @@
     <link href="static/styles/css/ionicons.min.css" rel="stylesheet" type="text/css">
     <link href="static/styles/css/animate.css" rel="stylesheet" type="text/css">
 </head>
+
+<style>
+.image-container{
+    place-items: center;
+    text-align: center;
+    height: 350px;
+    width: 430px;
+    position: relative;
+}
+.image-container .wrapper{
+    position: relative;
+    height: 300px;
+    width: 100%;
+    border-radius: 10px ;
+    background: #fff;
+    border: 2px dashed #c2cdda;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.wrapper.active{
+    border: none;
+}
+
+.wrapper .image {
+    position: absolute;
+    height: 100%;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.wrapper img{
+    height: 100%;
+    width: 100%;
+    object-fit: cover;
+}
+
+.wrapper .icon {
+    font-size: 100px;
+    color: #9658fe;
+}
+
+.wrapper .text {
+    font-size: 20px;
+    font-weight: 500;
+    color: #5B5B7B;
+}
+
+.wrapper #cancel-btn {
+    position: absolute;
+    right: 15px;
+    top: 15px;
+    font-size: 20px;
+    cursor: pointer;
+    color: #9658fe;
+    display: none;
+}
+
+.wrapper.active:hover #cancel-btn{
+    display: block;
+}
+
+.wrapper #cancel-btn i:hover{
+    color: #e74c3c;
+}
+
+.wrapper .file-name {
+    position: absolute;
+    bottom: 0px;
+    width: 100%;
+    padding: 8px 0;
+    font-size: 18px;
+    color: #fff;
+    display: none;
+    background: linear-gradient(135deg,#3a8ffe 0%,#9658fe 100%);
+}
+
+.wrapper.active:hover .file-name{
+    display: block;
+}
+
+.image-container #custom-btn {
+    margin-top: 30px;
+    width: 100%;
+    height: 50px;
+    display: block;
+    border: none;
+    outline: none;
+    border-radius: 25px;
+    color: #fff;
+    font-size: 18px;
+    font-weight: 500;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    background: linear-gradient(135deg,#3a8ffe 0%,#9658fe 100%);
+}
+
+input[type="file"] {
+  opacity: 0; /* make transparent */
+  z-index: -1; /* move under anything else */
+  position: absolute; /* don't let it take up space */
+}
+
+</style>
+
 <body>
 
 <!-- Preloader -->
@@ -41,9 +151,9 @@
                 <ul class="nav navbar-nav navbar-right">
                     <li><a class="page-scroll" href="#about">About</a></li>
                     <li><a class="page-scroll" href="#portfolio">Examples</a></li>
-                    <li><a class="page-scroll" href="#features">Model</a></li>
+                    <li><a class="page-scroll" href="https://keras.io/api/applications/vgg/" target=”_blank”>Model</a></li>
                     <li><a class="page-scroll" href="#testimonials">Data</a></li>
-                    <li><a class="page-scroll" href="#contact">Contact</a></li>
+                    <li><a class="page-scroll" href="#footer">Contact</a></li>
                 </ul>
             </div>
         </div>
@@ -57,8 +167,34 @@
         <div class="cover-container inner2">
             <div class="cover">
 
-                <p class="lead">TODO: ADD IMAGE HERE</p>
+                <div class="row">
+                    <div class="col-sm-12 col-md-12 col-lg-6">
+                        <div class="image-container">
+                            <div class="wrapper">
+                                <div class="image">
+                                    <img src="" alt="">
+                                </div>
+
+                                <div class="content">
+                                    <div class="icon"><i class="ion-android-upload"></i></div>
+                                    <div class="text"></div>
+                                </div>
+
+                                <div id="cancel-btn"><i class="ion-android-cancel"></i> </div>
+                                <div class="file-name">File name here</div>
+                            </div>
+                            <input id="default-btn" type="file">
+                            <button onclick = "defaultBtnActive()" id="custom-btn">Choose a file</button>
+                        </div>
+                    </div>
+                    <div class="col-sm-12 col-md-12 col-lg-6">
+                        Likely dog breeds:
+                    </div>
+                </div>
+
             </div>
+            &nbsp;
+            &nbsp;
             <div class="scroll-btn hidden-sm hidden-xs wow bounceInDown" data-wow-delay="1.4s">
                 <a href="#about">
                        <span class="mouse">
@@ -72,12 +208,48 @@
     </div>
 </section>
 
+<script>
+    // https://www.codingnepalweb.com/2020/07/preview-image-before-upload-in-javascript.html
+    const wrapper = document.querySelector(".wrapper");
+    const fileName = document.querySelector(".file-name");
+    const cancelBtn = document.querySelector("#cancel-btn");
+    const defaultBtn = document.querySelector("#default-btn");
+    const customBtn = document.querySelector("#custom-btn i");
+    const img = document.querySelector("img");
+    let regExp = /[0-9a-zA-Z\^\&\'\@\{\}\[\]\,\$\=\!\-\#\(\)\.\%\+\~\_ ]+$/;
+
+    function defaultBtnActive() {
+        defaultBtn.click()
+    }
+
+    defaultBtn.addEventListener("change", function (){
+        const file = this.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function (){
+                const result = reader.result;
+                img.src = result;
+                wrapper.classList.add("active");
+            }
+            cancelBtn.addEventListener("click", function (){
+                img.src = "";
+                wrapper.classList.remove("active");
+            });
+            reader.readAsDataURL(file);
+        }
+        if (this.value){
+            let valueStore = this.value.match(regExp);
+            fileName.textContent = valueStore;
+        }
+    });
+</script>
+
 <!-- about -->
 <section id="about">
     <div class="container-fluid text-center wow fadeIn">
         <div class="row">
             <div class="col-md-8 col-md-offset-2">
-                <h2>About<span class="thin">Us</span></h2>
+                <h2><span class="thin">Image Classification with </span>Deep Learning</h2>
                 <p class="lead">We believe that the best user interfaces strive for simplicity. Fewer steps to take, fewer concepts to learn and a minified congnitive load. We are obsessed with beautiful digital experiences putting the user at the centre of everything we make.</p>
             </div>
         </div>
@@ -246,17 +418,17 @@
 </div>
 
 <!-- footer -->
-<section id="footer" class="footer-portfolio wow fadeIn">
+<section id="footer" class="wow fadeIn">
     <div class="overlay-dark"></div>
     <div class="container-fluid text-center">
         <div class="row">
             <h2 class="wow flash" data-wow-iteration="999" data-wow-duration="2s"><a href="#top"><i class="icon ion-ios-arrow-up"></i></a>&nbsp;</h2>
-            <h2 class="wow fadeIn" data-wow-duration="6s" data-wow-delay="1s"><a href="#top"><i class="icon ion-ios-star"></i> Cover<span class="thin">Creative</span></a></h2>
+            <h2 class="wow fadeIn" data-wow-duration="6s" data-wow-delay="1s"><a href="#top"><i class="icon ion-ios-star"></i><span class="thin">Image Classification with </span>Deep Learning</a></h2>
             <div class="col-md-4">
-                <h3><i class="icon ion-android-call"></i> (123) 456-7890</h3>
+
             </div>
             <div class="col-md-4">
-                <h3>2345 Some Ave, New York, NY 23458</h3>
+                <h3>by Marina Pereira Oliveira</h3>
             </div>
             <div class="col-md-4">
                 <ul class="list-inline size-28">
@@ -265,7 +437,6 @@
                 </ul>
             </div>
         </div>
-        <p>&copy;2018 Your Website</p>
     </div>
 </section>
 

@@ -18,6 +18,17 @@
 </head>
 
 <style>
+.flex-container {
+    display: flex;
+    flex-wrap: nowrap;
+}
+
+.flex-container > div {
+  width: 400px;
+  margin: 10px;
+  text-align: center;
+}
+
 .image-container{
     place-items: center;
     text-align: center;
@@ -124,6 +135,16 @@ input[type="file"] {
   position: absolute; /* don't let it take up space */
 }
 
+.text-container {
+    text-transform: uppercase;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+ol li {
+    list-style-type: none;
+}
+
 </style>
 
 <body>
@@ -167,19 +188,18 @@ input[type="file"] {
         <div class="cover-container inner2">
             <div class="cover">
 
-                <div class="row">
-                    <div class="col-sm-12 col-md-12 col-lg-6">
+                <div class="flex-container">
+                    <div>
                         <div class="image-container">
                             <div class="wrapper">
                                 <div class="image">
-                                    <img src="" alt="">
+                                    <img id="uploadedImage" src="" alt="dog" onerror="this.style.display='none'" />
                                 </div>
 
                                 <div class="content">
                                     <div class="icon"><i class="ion-android-upload"></i></div>
                                     <div class="text"></div>
                                 </div>
-
                                 <div id="cancel-btn"><i class="ion-android-cancel"></i> </div>
                                 <div class="file-name">File name here</div>
                             </div>
@@ -187,15 +207,18 @@ input[type="file"] {
                             <button onclick = "defaultBtnActive()" id="custom-btn">Choose a file</button>
                         </div>
                     </div>
-                    <div class="col-sm-12 col-md-12 col-lg-6">
-                        Likely dog breeds:
+                    <div>
+                        <div class="text-container">
+                            Likely dog breeds:
+                            <ol id="breedList"></ol>
+                        </div>
                     </div>
                 </div>
 
             </div>
             &nbsp;
             &nbsp;
-            <div class="scroll-btn hidden-sm hidden-xs wow bounceInDown" data-wow-delay="1.4s">
+            <div class="scroll-btn wow bounceInDown" data-wow-delay="1.4s">
                 <a href="#about">
                        <span class="mouse">
                        <span class="weel">
@@ -226,14 +249,45 @@ input[type="file"] {
         const file = this.files[0];
         if (file) {
             const reader = new FileReader();
+
             reader.onload = function (){
                 const result = reader.result;
                 img.src = result;
                 wrapper.classList.add("active");
+
+                document.getElementById("uploadedImage").style.display = "flex";
+
+                // send image to backend
+                fetch(`${window.origin}/`, {
+                    method: "POST",
+                    mode: "cors",
+                    body: JSON.stringify({image: result}),
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(( data ) => {
+                    return data.json();
+                })
+                .then((data) => {
+                    //console.log(data);
+                    const bList = document.getElementById('breedList');
+                    bList.innerHTML = '';
+
+                    data.map((dog) => {
+                        const el = document.createElement('li');
+                        el.innerText = dog['breed'] + " " + dog['percentage'];
+                        bList.appendChild(el);
+                    })
+                })
             }
+
             cancelBtn.addEventListener("click", function (){
                 img.src = "";
                 wrapper.classList.remove("active");
+
+                const bList = document.getElementById('breedList');
+                bList.innerHTML = '';
             });
             reader.readAsDataURL(file);
         }

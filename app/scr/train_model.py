@@ -90,7 +90,7 @@ def decode_images(files):
         x = image.img_to_array(img)
         data.append(x)
 
-    data = np.array(data)
+    data = np.array(data) / 224
     return data
 
 
@@ -202,39 +202,105 @@ def fine_tune_pretrained_model(x_train, y_train, x_validation, y_validation):
     model.fit(x_train, y_train, epochs=10, validation_data=(x_validation, y_validation), verbose=1, shuffle=True)
 
 
+def train_transfer_learning_vgg(x_train, y_train, x_validation, y_validation):
+    """Fine tune pretrained VGG model."""
+
+    base_model = VGG16(weights='imagenet', include_top=False)
+    # print(base_model.summary())
+
+    # add a global spatial average pooling layer
+    x = base_model.output
+    x = GlobalAvgPool2D()(x)
+    # let's add a fully-connect layer
+    x = Dense(1024, activation='relu')(x)
+    # add a logistic layer -- with correct number of classes
+    predictions = Dense(y_train.shape[1], activation='softmax')(x)
+
+    # this is the model we will train
+    model = Model(inputs=base_model.input, outputs=predictions)
+    # print(model.summary())
+
+    # first: train only the top layers (which were randomly initialized)
+    # i.e. freeze all convolutional layers of the model
+    for layer in base_model.layers:
+        layer.trainable = False
+
+    # compile the model (should be done *after* setting layers to non-trainable)
+    model.compile(optimizer='rmsprop', loss='categorical_crossentropy')
+
+    # train the model on the new fata for a few epochs
+    model.fit(x_train, y_train, epochs=2, validation_data=(x_validation, y_validation), verbose=1, shuffle=True)
+    # model.fit(train_vgg16, train_targets, epochs=20, validation_data=(valid_vgg16, valid_targets),
+    #           callbacks=[checkpointer], verbose=1, shuffle=True)
+
+    # at this point, the top layers are well trained and we can start fine-tuning
+    # convolutional layers from vgg16. We will freeze the bottom N layers
+    # and train the remaining top layers.
+
+    # let's visualize layer names and layer indices to see how many layers
+    # we should freeze:
+    for i, layer in enumerate(base_model.layers):
+        print(i, layer.name)
+    sys.exit('STOP')
+
+    # we chose to train the top 2 inception blocks, i.e. we will freeze
+    # the first 249 layers and unfreeze the rest:
+    for layer in model.layers[:249]:
+        layer.trainable = False
+    for layer in model.layers[249:]:
+        layer.trainable = True
+
+    # we need to recompile the model for these modifications to take effect
+    # we use SGD with a low learning rate
+    from tensorflow.keras.optimizers import SGD
+    model.compile(optimizer=SGD(lr=0.0001, momentum=0.9), loss='categorical_crossentropy')
+
+    # we train our model again (this time fine-tuning the top 2 inception blocks
+    # alongside the top Dense layers
+    model.fit(x_train, y_train, epochs=10, validation_data=(x_validation, y_validation), verbose=1, shuffle=True)
+
+
 def main():
     dog_breed_file_name = '../data/inp/dog_breed.txt'
     dog_breed_list = download_image.read_data(dog_breed_file_name)
     n_categories = len(dog_breed_list)
 
     n_images = 60
-    output_directory = '../data/dogs/train'
-    chromedriver = '../data/exe/chromedriver'
+    train_directory = '../data/dogs/train'
+    validation_directory = '../data/dogs/validation'
+    test_directory = '../data/dogs/test'
+    chromedriver = '../data/exe/chromedriver_linux64'
 
     # Download images.
-    download_image.download(dog_breed_list, n_images, output_directory, chromedriver)
+    # download_image.download(dog_breed_list, n_images, train_directory, validation_directory, test_directory,
+    #                         chromedriver)
 
     # Load images
-    # categories, train_files, train_targets = load_data(n_categories, output_directory)
-    # _, valid_files, valid_targets = load_data(n_categories, output_directory)
-    # _, test_files, test_targets = load_data(n_categories, test_directory)
+    categories, train_files, train_targets = load_data(n_categories, train_directory)
+    _, valid_files, valid_targets = load_data(n_categories, validation_directory)
+    _, test_files, test_targets = load_data(n_categories, test_directory)
 
     # Print statistics about the dataset
     # print('There are {} total dog categories.'.format(len(categories)))
     # print('There are {} training dog images.'.format(len(train_files)))
-    # print('There are {} validation dog images.'.format(0))
-    # print('There are {} test dog images.'.format(0))
+    # print('There are {} validation dog images.'.format(len(valid_files)))
+    # print('There are {} test dog images.'.format(len(test_files)))
 
     # Plot example images
     # train_targets_bool = train_targets == 1
     # fig = plot.plot_images(3, 4, train_files, train_targets_bool, categories)
     # fig.show()
 
-    # x_train = decode_images(train_files)
+    x_train = decode_images(train_files)
+    x_valid = decode_images(valid_files)
+    x_test = decode_images(test_files)
+
+    # TODO - save features to file
 
     # classify_image_vgg16()
     # extract_features_from_an_arbitrary_intermediate_layer()
     # fine_tune_pretrained_model(x_train, train_targets, x_train, train_targets)
+    # train_transfer_learning_vgg(x_train, train_targets, x_valid, valid_targets)
 
 
 if __name__ == '__main__':

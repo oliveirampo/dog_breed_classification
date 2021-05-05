@@ -260,47 +260,87 @@ def train_transfer_learning_vgg(x_train, y_train, x_validation, y_validation):
     model.fit(x_train, y_train, epochs=10, validation_data=(x_validation, y_validation), verbose=1, shuffle=True)
 
 
-def main():
-    dog_breed_file_name = '../data/inp/dog_breed.txt'
+def load_dataset(n_images, dog_breed_file_name, train_directory, validation_directory, test_directory, chromedriver,
+                 dataset_file_name):
+    """Load data set.
+
+    Load npz file if it already exits, or
+    convert images to matrices, save them into npz file and return them, or
+    download images, convert images to matrices, save them into npz file and return them.
+    """
+
+    if os.path.exists(dataset_file_name):
+        print('Loading dataset...')
+
+        loaded = np.load(dataset_file_name)
+        x_train = loaded['x_train']
+        x_valid = loaded['x_valid']
+        x_test = loaded['x_test']
+        train_targets = loaded['train_targets']
+        valid_targets = loaded['valid_targets']
+        test_targets = loaded['test_targets']
+
+        return x_train, x_valid, x_test, train_targets, valid_targets, test_targets
+
     dog_breed_list = download_image.read_data(dog_breed_file_name)
     n_categories = len(dog_breed_list)
 
-    n_images = 60
-    train_directory = '../data/dogs/train'
-    validation_directory = '../data/dogs/validation'
-    test_directory = '../data/dogs/test'
-    chromedriver = '../data/exe/chromedriver_linux64'
-
-    # Download images.
-    # download_image.download(dog_breed_list, n_images, train_directory, validation_directory, test_directory,
-    #                         chromedriver)
+    # Download images
+    download_image.download(dog_breed_list, n_images, train_directory, validation_directory, test_directory,
+                            chromedriver)
 
     # Load images
     categories, train_files, train_targets = load_data(n_categories, train_directory)
     _, valid_files, valid_targets = load_data(n_categories, validation_directory)
     _, test_files, test_targets = load_data(n_categories, test_directory)
 
-    # Print statistics about the dataset
-    # print('There are {} total dog categories.'.format(len(categories)))
-    # print('There are {} training dog images.'.format(len(train_files)))
-    # print('There are {} validation dog images.'.format(len(valid_files)))
-    # print('There are {} test dog images.'.format(len(test_files)))
-
-    # Plot example images
-    # train_targets_bool = train_targets == 1
-    # fig = plot.plot_images(3, 4, train_files, train_targets_bool, categories)
-    # fig.show()
-
     x_train = decode_images(train_files)
     x_valid = decode_images(valid_files)
     x_test = decode_images(test_files)
 
-    # TODO - save features to file
+    np.savez_compressed(dataset_file_name, x_train=x_train, x_valid=x_valid, x_test=x_test, train_targets=train_targets,
+                        valid_targets=valid_targets, test_targets=test_targets)
+
+    return x_train, x_valid, x_test, train_targets, valid_targets, test_targets
+
+
+def plot_dataset(categories, train_files, train_targets):
+    """Plot example images"""
+
+    train_targets_bool = train_targets == 1
+    fig = plot.plot_images(3, 4, train_files, train_targets_bool, categories)
+    fig.show()
+
+
+def print_data_info(categories, train_files, valid_files, test_files):
+    """Print basic information about the dataset"""
+
+    print('There are {} total dog categories.'.format(len(categories)))
+    print('There are {} training dog images.'.format(len(train_files)))
+    print('There are {} validation dog images.'.format(len(valid_files)))
+    print('There are {} test dog images.'.format(len(test_files)))
+
+
+def main():
+    n_images = 60
+    dog_breed_file_name = '../data/inp/dog_breed.txt'
+
+    train_directory = '../data/dogs/train'
+    validation_directory = '../data/dogs/validation'
+    test_directory = '../data/dogs/test'
+    chromedriver = '../data/exe/chromedriver_linux64'
+
+    dataset_file_name = '../data/inp/dataset.npz'
+    x_train, x_valid, x_test, train_targets, valid_targets, test_targets = load_dataset(n_images, dog_breed_file_name,
+                                                                                        train_directory,
+                                                                                        validation_directory,
+                                                                                        test_directory, chromedriver,
+                                                                                        dataset_file_name)
 
     # classify_image_vgg16()
     # extract_features_from_an_arbitrary_intermediate_layer()
     # fine_tune_pretrained_model(x_train, train_targets, x_train, train_targets)
-    # train_transfer_learning_vgg(x_train, train_targets, x_valid, valid_targets)
+    train_transfer_learning_vgg(x_train, train_targets, x_valid, valid_targets)
 
 
 if __name__ == '__main__':

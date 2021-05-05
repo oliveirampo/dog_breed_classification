@@ -275,28 +275,8 @@ def load_dataset(n_images, dog_breed_file_name, train_directory, validation_dire
     if os.path.exists(file_name):
         print('Loading dataset...')
 
-        loaded = np.load(file_name)
-        x_train = loaded['data']
-        train_targets = loaded['data']
-        for i in range(1, n_splits):
-            file_name = '{}/dataset_train_{}.npz'.format(dataset_directory, i)
-            loaded = np.load(file_name)
-            x_train_tmp = loaded['data']
-            train_targets_tmp = loaded['targets']
-            loaded = None
-
-            x_train = np.concatenate((x_train, x_train_tmp))
-            train_targets = np.concatenate((train_targets, train_targets_tmp))
-
-        loaded = np.load(file_name)
-        x_test = loaded['data']
-        test_targets = loaded['targets']
-
-        file_name = '{}/dataset_valid.npz'.format(dataset_directory)
-        loaded = np.load(file_name)
-        x_valid = loaded['data']
-        valid_targets = loaded['targets']
-
+        x_train, x_valid, x_test, train_targets, valid_targets, test_targets = load_saved_dataset(n_splits,
+                                                                                                  dataset_directory)
         return x_train, x_valid, x_test, train_targets, valid_targets, test_targets
 
     dog_breed_list = download_image.read_data(dog_breed_file_name)
@@ -327,6 +307,36 @@ def load_dataset(n_images, dog_breed_file_name, train_directory, validation_dire
 
     file_name = '{}/dataset_valid.npz'.format(dataset_directory)
     np.savez_compressed(file_name, data=x_valid, targets=valid_targets)
+
+    return x_train, x_valid, x_test, train_targets, valid_targets, test_targets
+
+
+def load_saved_dataset(n_splits, dataset_directory):
+    """Load saved datasets."""
+
+    file_name = '{}/dataset_train_0.npz'.format(dataset_directory)
+    loaded = np.load(file_name)
+    x_train = loaded['data']
+    train_targets = loaded['data']
+
+    for i in range(1, n_splits):
+        file_name = '{}/dataset_train_{}.npz'.format(dataset_directory, i)
+        loaded = np.load(file_name)
+        x_train_tmp = loaded['data']
+        train_targets_tmp = loaded['targets']
+        loaded = None
+
+        x_train = np.concatenate((x_train, x_train_tmp))
+        train_targets = np.concatenate((train_targets, train_targets_tmp))
+
+    loaded = np.load(file_name)
+    x_test = loaded['data']
+    test_targets = loaded['targets']
+
+    file_name = '{}/dataset_valid.npz'.format(dataset_directory)
+    loaded = np.load(file_name)
+    x_valid = loaded['data']
+    valid_targets = loaded['targets']
 
     return x_train, x_valid, x_test, train_targets, valid_targets, test_targets
 

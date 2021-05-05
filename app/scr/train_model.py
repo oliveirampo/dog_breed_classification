@@ -317,7 +317,7 @@ def load_saved_dataset(n_splits, dataset_directory):
     file_name = '{}/dataset_train_0.npz'.format(dataset_directory)
     loaded = np.load(file_name)
     x_train = loaded['data']
-    train_targets = loaded['data']
+    train_targets = loaded['targets']
 
     for i in range(1, n_splits):
         file_name = '{}/dataset_train_{}.npz'.format(dataset_directory, i)
@@ -367,7 +367,7 @@ def main():
     test_directory = '../data/dogs/test'
     chromedriver = '../data/exe/chromedriver_linux64'
 
-    dataset_directory = '../data/inp/'
+    dataset_directory = '../data/inp'
     x_train, x_valid, x_test, train_targets, valid_targets, test_targets = load_dataset(n_images, dog_breed_file_name,
                                                                                         train_directory,
                                                                                         validation_directory,

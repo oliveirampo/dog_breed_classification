@@ -261,7 +261,7 @@ def train_transfer_learning_vgg(x_train, y_train, x_validation, y_validation):
 
 
 def load_dataset(n_images, dog_breed_file_name, train_directory, validation_directory, test_directory, chromedriver,
-                 dataset_file_name):
+                 dataset_directory):
     """Load data set.
 
     Load npz file if it already exits, or
@@ -269,16 +269,33 @@ def load_dataset(n_images, dog_breed_file_name, train_directory, validation_dire
     download images, convert images to matrices, save them into npz file and return them.
     """
 
-    if os.path.exists(dataset_file_name):
+    n_splits = 6
+
+    file_name = '{}/dataset_train_0.npz'.format(dataset_directory)
+    if os.path.exists(file_name):
         print('Loading dataset...')
 
-        loaded = np.load(dataset_file_name)
-        x_train = loaded['x_train']
-        x_valid = loaded['x_valid']
-        x_test = loaded['x_test']
-        train_targets = loaded['train_targets']
-        valid_targets = loaded['valid_targets']
-        test_targets = loaded['test_targets']
+        loaded = np.load(file_name)
+        x_train = loaded['data']
+        train_targets = loaded['data']
+        for i in range(1, n_splits):
+            file_name = '{}/dataset_train_{}.npz'.format(dataset_directory, i)
+            loaded = np.load(file_name)
+            x_train_tmp = loaded['data']
+            train_targets_tmp = loaded['targets']
+            loaded = None
+
+            x_train = np.concatenate((x_train, x_train_tmp))
+            train_targets = np.concatenate((train_targets, train_targets_tmp))
+
+        loaded = np.load(file_name)
+        x_test = loaded['data']
+        test_targets = loaded['targets']
+
+        file_name = '{}/dataset_valid.npz'.format(dataset_directory)
+        loaded = np.load(file_name)
+        x_valid = loaded['data']
+        valid_targets = loaded['targets']
 
         return x_train, x_valid, x_test, train_targets, valid_targets, test_targets
 
@@ -298,8 +315,18 @@ def load_dataset(n_images, dog_breed_file_name, train_directory, validation_dire
     x_valid = decode_images(valid_files)
     x_test = decode_images(test_files)
 
-    np.savez_compressed(dataset_file_name, x_train=x_train, x_valid=x_valid, x_test=x_test, train_targets=train_targets,
-                        valid_targets=valid_targets, test_targets=test_targets)
+    # split train dataset (to save into smaller files)
+    x_train_split = np.split(x_train, n_splits)
+    train_targets_split = np.split(train_targets, n_splits)
+    for idx, (x_split, target_split) in enumerate(zip(x_train_split, train_targets_split)):
+        file_name = '{}/dataset_train_{}.npz'.format(dataset_directory, idx)
+        np.savez_compressed(file_name, data=x_split, targets=target_split)
+
+    file_name = '{}/dataset_test.npz'.format(dataset_directory)
+    np.savez_compressed(file_name, data=x_test, targets=test_targets)
+
+    file_name = '{}/dataset_valid.npz'.format(dataset_directory)
+    np.savez_compressed(file_name, data=x_valid, targets=valid_targets)
 
     return x_train, x_valid, x_test, train_targets, valid_targets, test_targets
 
@@ -330,17 +357,20 @@ def main():
     test_directory = '../data/dogs/test'
     chromedriver = '../data/exe/chromedriver_linux64'
 
-    dataset_file_name = '../data/inp/dataset.npz'
+    dataset_directory = '../data/inp/'
     x_train, x_valid, x_test, train_targets, valid_targets, test_targets = load_dataset(n_images, dog_breed_file_name,
                                                                                         train_directory,
                                                                                         validation_directory,
                                                                                         test_directory, chromedriver,
-                                                                                        dataset_file_name)
+                                                                                        dataset_directory)
+
+    print(x_train.shape)
+    print(train_targets.shape)
 
     # classify_image_vgg16()
     # extract_features_from_an_arbitrary_intermediate_layer()
     # fine_tune_pretrained_model(x_train, train_targets, x_train, train_targets)
-    train_transfer_learning_vgg(x_train, train_targets, x_valid, valid_targets)
+    # train_transfer_learning_vgg(x_train, train_targets, x_valid, valid_targets)
 
 
 if __name__ == '__main__':

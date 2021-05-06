@@ -241,17 +241,17 @@ def load_non_compressed_dataset(categories, n_splits, train_files, valid_files, 
         json.dump(categories, outfile)
 
     # split train dataset (to save into smaller files)
-    # x_train_split = np.split(x_train, n_splits)
-    # train_targets_split = np.split(train_targets, n_splits)
-    # for idx, (x_split, target_split) in enumerate(zip(x_train_split, train_targets_split)):
-    #     file_name = '{}/dataset_train_{}.npz'.format(dataset_directory, idx)
-    #     np.savez_compressed(file_name, data=x_split, targets=target_split)
+    x_train_split = np.split(x_train, n_splits)
+    train_targets_split = np.split(train_targets, n_splits)
+    for idx, (x_split, target_split) in enumerate(zip(x_train_split, train_targets_split)):
+        file_name = '{}/dataset_train_{}.npz'.format(dataset_directory, idx)
+        np.savez_compressed(file_name, data=x_split, targets=target_split)
 
     file_name = '{}/dataset_test.npz'.format(dataset_directory)
-    # np.savez_compressed(file_name, data=x_test, targets=test_targets)
+    np.savez_compressed(file_name, data=x_test, targets=test_targets)
 
     file_name = '{}/dataset_valid.npz'.format(dataset_directory)
-    # np.savez_compressed(file_name, data=x_valid, targets=valid_targets)
+    np.savez_compressed(file_name, data=x_valid, targets=valid_targets)
 
     return categories, x_train, x_valid, x_test, train_targets, valid_targets, test_targets
 

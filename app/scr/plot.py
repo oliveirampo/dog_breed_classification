@@ -8,15 +8,25 @@ def plot_images(n_rows, n_cols, files, targets, categories):
     :param n_rows: (int) Number of rows.
     :param n_cols: (int) Number of columns.
     :param files: (np.arr) List with name of image files.
-    :param categories: (np.arr)
+    :param categories: (dict)
     :param targets: (np.arr)
     :return fig: (Figure object)
     """
 
+    categories_list = list(categories.values())
+    print(categories_list)
+
     fig = plt.figure(figsize=(20, 10))
     for i in range(12):
         ax = fig.add_subplot(n_rows, n_cols, i + 1, xticks=[], yticks=[])
-        visualize_img(files[i], categories[targets[i]][0], ax)
+        # visualize_img(files[i], categories_list[targets[i]][0], ax)
+
+        # TODO - fix here
+        import sys
+        sys.exit(123)
+        print(targets[i])
+        print(categories_list[targets[i]])
+        # print(categories_list[targets[i]][0])
 
     return fig
 

@@ -22,79 +22,6 @@ import download_image
 import plot
 
 
-def old_step(n_categories, train_targets, valid_targets):
-    bottleneck_features = np.load('../data/bottleneck_features/vgg16.npz')
-    print(bottleneck_features)
-    # sys.exit('STOP')
-
-    # Load pretrained VGG-16 model
-    bottleneck_features = np.load('../data/bottleneck_features/DogVGG16Data.npz')
-    train_vgg16 = bottleneck_features['train']
-    valid_vgg16 = bottleneck_features['valid']
-    test_vgg16 = bottleneck_features['test']
-
-    # Define a model architecture (Model 1)
-    model = Sequential()
-    model.add(Flatten(input_shape=(7, 7, 512)))
-    model.add(Dense(n_categories, activation='softmax'))
-    model.compile(loss='categorical_crossentropy', optimizer='rmsprop', metrics=['accuracy'])
-    model.summary()
-
-    # Define another model architecture (Model 2)
-    model = Sequential()
-    model.add(GlobalAvgPool2D(input_shape=(7, 7, 512)))
-    model.add(Dense(n_categories, activation='softmax'))
-    model.compile(loss='categorical_crossentropy', optimizer='rmsprop', metrics=['accuracy'])
-    model.summary()
-
-    # Train the model
-    checkpointer = ModelCheckpoint(filepath='../data/checkpoint/dogvgg16.weights.best.hdf5',
-                                   verbose=1, save_best_only=True)
-
-    print(train_vgg16)
-    print(train_vgg16.shape)
-    print(train_targets.shape)
-    model.fit(train_vgg16, train_targets, epochs=20, validation_data=(valid_vgg16, valid_targets),
-              callbacks=[checkpointer], verbose=1, shuffle=True)
-
-
-def load_data(n_categories, output_directory):
-    """Load text files with categories as subfolder names using Keras.
-
-    :param n_categories: (int) Number of categories.
-    :param output_directory: (str) Directory with files.
-    :return:
-        categories: (arr) List of categories.
-        dog_files: (arr) List of files with name of images.
-        dog_targets: (arr) List of targets in categorical shape.
-    """
-
-    data = load_files(output_directory)
-    dog_files = np.array(data['filenames'])
-    dog_targets = np_utils.to_categorical(np.array(data['target']), n_categories)
-    categories = np.array(data['target_names'])
-    return categories, dog_files, dog_targets
-
-
-def decode_images(files):
-    """Converts images to matrix.
-
-    :param files: (arr) List of path if images.
-    :return:
-        data: (arr) Matrix with images in (num images, 224, 224, 3) format.
-    """
-
-    data = []
-
-    for img_path in files:
-        img = image.load_img(img_path, target_size=(224, 224))
-        x = image.img_to_array(img)
-        data.append(x)
-
-    data = np.array(data) / 224
-    return data
-
-
 def classify_image_resnet50():
     """Example from Keras of how to classify single image with ResNet50."""
 
@@ -261,39 +188,47 @@ def train_transfer_learning_vgg(x_train, y_train, x_validation, y_validation):
     model.fit(x_train, y_train, epochs=10, validation_data=(x_validation, y_validation), verbose=1, shuffle=True)
 
 
-def load_dataset(n_images, dog_breed_file_name, train_directory, validation_directory, test_directory, chromedriver,
-                 dataset_directory):
-    """Load data set.
+def load_data_from_files(n_categories, output_directory):
+    """Load text files with categories as subfolder names using Keras.
 
-    Load npz file if it already exits, or
-    convert images to matrices, save them into npz file and return them, or
-    download images, convert images to matrices, save them into npz file and return them.
+    :param n_categories: (int) Number of categories.
+    :param output_directory: (str) Directory with files.
+    :return:
+        categories: (arr) List of categories.
+        dog_files: (arr) List of files with name of images.
+        dog_targets: (arr) List of targets in categorical shape.
     """
 
-    n_splits = 6
+    data = load_files(output_directory)
+    dog_files = np.array(data['filenames'])
+    dog_targets = np_utils.to_categorical(np.array(data['target']), n_categories)
+    categories = np.array(data['target_names'])
+    return categories, dog_files, dog_targets
 
-    file_name = '{}/categories.json'.format(dataset_directory)
-    if os.path.exists(file_name):
-        print('Loading dataset...')
 
-        with open(file_name) as file:
-            categories = json.load(file)
+def decode_images(files):
+    """Converts images to matrix.
 
-        x_train, x_valid, x_test, train_targets, valid_targets, test_targets = load_saved_dataset(n_splits,
-                                                                                                  dataset_directory)
-        return categories, x_train, x_valid, x_test, train_targets, valid_targets, test_targets
+    :param files: (arr) List of path if images.
+    :return:
+        data: (arr) Matrix with images in (num images, 224, 224, 3) format.
+    """
 
-    dog_breed_list = download_image.read_data(dog_breed_file_name)
-    n_categories = len(dog_breed_list)
+    data = []
 
-    # Download images
-    download_image.download(dog_breed_list, n_images, train_directory, validation_directory, test_directory,
-                            chromedriver)
+    for img_path in files:
+        img = image.load_img(img_path, target_size=(224, 224))
+        x = image.img_to_array(img)
+        data.append(x)
 
-    # Load images
-    categories, train_files, train_targets = load_data(n_categories, train_directory)
-    _, valid_files, valid_targets = load_data(n_categories, validation_directory)
-    _, test_files, test_targets = load_data(n_categories, test_directory)
+    data = np.array(data) / 224
+    return data
+
+
+def load_non_compressed_dataset(categories, n_splits, train_files, valid_files, test_files, train_targets, test_targets,
+                                valid_targets, dataset_directory):
+
+    print('Loading data...')
 
     x_train = decode_images(train_files)
     x_valid = decode_images(valid_files)
@@ -306,23 +241,29 @@ def load_dataset(n_images, dog_breed_file_name, train_directory, validation_dire
         json.dump(categories, outfile)
 
     # split train dataset (to save into smaller files)
-    x_train_split = np.split(x_train, n_splits)
-    train_targets_split = np.split(train_targets, n_splits)
-    for idx, (x_split, target_split) in enumerate(zip(x_train_split, train_targets_split)):
-        file_name = '{}/dataset_train_{}.npz'.format(dataset_directory, idx)
-        np.savez_compressed(file_name, data=x_split, targets=target_split)
+    # x_train_split = np.split(x_train, n_splits)
+    # train_targets_split = np.split(train_targets, n_splits)
+    # for idx, (x_split, target_split) in enumerate(zip(x_train_split, train_targets_split)):
+    #     file_name = '{}/dataset_train_{}.npz'.format(dataset_directory, idx)
+    #     np.savez_compressed(file_name, data=x_split, targets=target_split)
 
     file_name = '{}/dataset_test.npz'.format(dataset_directory)
-    np.savez_compressed(file_name, data=x_test, targets=test_targets)
+    # np.savez_compressed(file_name, data=x_test, targets=test_targets)
 
     file_name = '{}/dataset_valid.npz'.format(dataset_directory)
-    np.savez_compressed(file_name, data=x_valid, targets=valid_targets)
+    # np.savez_compressed(file_name, data=x_valid, targets=valid_targets)
 
     return categories, x_train, x_valid, x_test, train_targets, valid_targets, test_targets
 
 
-def load_saved_dataset(n_splits, dataset_directory):
-    """Load saved datasets."""
+def load_compressed_dataset(n_splits, dataset_directory):
+    """Load compressed datasets."""
+
+    print('Loading compressed data...')
+
+    file_name = '{}/categories.json'.format(dataset_directory)
+    with open(file_name) as file:
+        categories = json.load(file)
 
     file_name = '{}/dataset_train_0.npz'.format(dataset_directory)
     loaded = np.load(file_name)
@@ -339,6 +280,7 @@ def load_saved_dataset(n_splits, dataset_directory):
         x_train = np.concatenate((x_train, x_train_tmp))
         train_targets = np.concatenate((train_targets, train_targets_tmp))
 
+    file_name = '{}/dataset_test.npz'.format(dataset_directory)
     loaded = np.load(file_name)
     x_test = loaded['data']
     test_targets = loaded['targets']
@@ -348,7 +290,7 @@ def load_saved_dataset(n_splits, dataset_directory):
     x_valid = loaded['data']
     valid_targets = loaded['targets']
 
-    return x_train, x_valid, x_test, train_targets, valid_targets, test_targets
+    return categories, x_train, x_valid, x_test, train_targets, valid_targets, test_targets
 
 
 def plot_dataset(categories, train_files, train_targets):
@@ -369,7 +311,7 @@ def print_data_info(categories, train_files, valid_files, test_files):
 
 
 def main():
-    n_images = 60
+    n_images = 6
     dog_breed_file_name = '../data/inp/dog_breed.txt'
 
     train_directory = '../data/dogs/train'
@@ -377,13 +319,36 @@ def main():
     test_directory = '../data/dogs/test'
     chromedriver = '../data/exe/chromedriver_linux64'
 
-    dataset_directory = '../data/inp'
-    x_train, x_valid, x_test, train_targets, valid_targets, test_targets = load_dataset(n_images, dog_breed_file_name,
-                                                                                        train_directory,
-                                                                                        validation_directory,
-                                                                                        test_directory, chromedriver,
-                                                                                        dataset_directory)
+    dog_breed_list = download_image.read_data(dog_breed_file_name)
+    n_categories = len(dog_breed_list)
 
+    # Download images
+    is_to_download = False
+    if is_to_download:
+        download_image.download(dog_breed_list, n_images, train_directory, validation_directory, test_directory,
+                                chromedriver)
+
+    n_splits = 6
+    dataset_directory = '../data/inp'
+
+    # Load images
+    file_name = '{}/categories0.json'.format(dataset_directory)
+    if os.path.exists(file_name):
+        categories, x_train, x_valid, x_test, train_targets, valid_targets, test_targets = \
+            load_compressed_dataset(n_splits, dataset_directory)
+
+    else:
+        categories, train_files, train_targets = load_data_from_files(n_categories, train_directory)
+        _, valid_files, valid_targets = load_data_from_files(n_categories, validation_directory)
+        _, test_files, test_targets = load_data_from_files(n_categories, test_directory)
+
+        categories, x_train, x_valid, x_test, train_targets, valid_targets, test_targets = load_non_compressed_dataset(
+            categories, n_splits, train_files, valid_files, test_files, train_targets, test_targets, valid_targets,
+            dataset_directory)
+
+        plot_dataset(categories, train_files, train_targets)
+
+    print(len(categories))
     print(x_train.shape)
     print(train_targets.shape)
 

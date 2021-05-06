@@ -14,9 +14,9 @@ from keras.utils import np_utils
 import numpy as np
 
 from keras.layers import GlobalAvgPool2D
-from keras.layers import Dense, Flatten
-from keras.models import Sequential
-from keras.callbacks import ModelCheckpoint
+from keras.layers import Dense
+
+from tensorflow.keras.models import load_model
 
 import download_image
 import plot
@@ -311,7 +311,7 @@ def print_data_info(categories, train_files, valid_files, test_files):
 
 
 def main():
-    n_images = 6
+    n_images = 60
     dog_breed_file_name = '../data/inp/dog_breed.txt'
 
     train_directory = '../data/dogs/train'

@@ -4,18 +4,21 @@ from flask_bootstrap import Bootstrap
 from flask_flatpages import FlatPages
 from flask import render_template
 from flask_frozen import Freezer
-from flask import redirect
 from flask import request
-from flask import flash
 from flask import Flask
-from flask import make_response
 from flask import jsonify
-from werkzeug.utils import secure_filename
+
+from io import BytesIO
+from PIL import Image
+
+import numpy as np
 import json
 import sys
 import os
-from io import BytesIO
-from PIL import Image
+
+from tensorflow.keras.applications.resnet50 import preprocess_input
+from tensorflow.keras.preprocessing import image
+from tensorflow.keras.models import load_model
 
 
 # Some configuration, ensures
@@ -37,9 +40,17 @@ Bootstrap(app)
 pages = FlatPages(app)
 freezer = Freezer(app)
 
+file_name = 'app/data/inp/categories.json'
+with open(file_name) as file:
+    categories = json.load(file)
+# print(categories)
+
+model_path = 'app/model'
+model = load_model(model_path)
+# print(model.summary())
+
 @app.route('/', methods=['GET', 'POST'])
 def page_index():
-
     if request.method == 'POST':
         data_json = request.get_data()
 
@@ -49,21 +60,33 @@ def page_index():
 
             img_data = data_json.split(',')[1]
 
-            f = open('/home/marina/lixo/lixo.png', 'wb')
-            f.write(base64.b64decode(img_data))
-            f.close()
+            # save image to file
+            # image_bytes = base64.b64decode(img_data)
+            # f = open('/home/marina/lixo/lixo.png', 'wb')
+            # f.write(base64.b64decode(image_bytes))
+            # f.close()
 
-            prediction = getPrediction('image')
+            prediction = getPrediction(img_data, categories, model)
 
             return jsonify(prediction)
 
     return render_template('index.html')
 
 
-def getPrediction(image):
-    return [{"breed": "dog1", "percentage": "(0.0 %)"},
-            {"breed": "dog1", "percentage": "(0.0 %)"},
-            {"breed": "dog3", "percentage": "(0.0 %)"}]
+def getPrediction(image_data, categories, model, top=3):
+    img = Image.open(BytesIO(base64.b64decode(image_data)))
+    img = img.resize((244, 224))
+
+    x = image.img_to_array(img)
+    x = np.expand_dims(x, axis=0)
+    x = preprocess_input(x)
+
+    features = model.predict(x)[0]
+
+    top_indices = features.argsort()[-top:][::-1]
+    results = [{"breed": categories[str(i)].replace('_', ' '), "percentage": '({:.2f} %)'.format(features[i] * 100.0)} for i in top_indices]
+
+    return results
 
 
 if __name__ == '__main__':

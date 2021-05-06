@@ -1,3 +1,4 @@
+import json
 import sys
 import os
 
@@ -21,40 +22,40 @@ import download_image
 import plot
 
 
-def old_step():
+def old_step(n_categories, train_targets, valid_targets):
     bottleneck_features = np.load('../data/bottleneck_features/vgg16.npz')
     print(bottleneck_features)
     # sys.exit('STOP')
 
     # Load pretrained VGG-16 model
-    # bottleneck_features = np.load('../data/bottleneck_features/DogVGG16Data.npz')
-    # train_vgg16 = bottleneck_features['train']
-    # valid_vgg16 = bottleneck_features['valid']
-    # test_vgg16 = bottleneck_features['test']
+    bottleneck_features = np.load('../data/bottleneck_features/DogVGG16Data.npz')
+    train_vgg16 = bottleneck_features['train']
+    valid_vgg16 = bottleneck_features['valid']
+    test_vgg16 = bottleneck_features['test']
 
     # Define a model architecture (Model 1)
-    # model = Sequential()
-    # model.add(Flatten(input_shape=(7, 7, 512)))
-    # model.add(Dense(n_categories, activation='softmax'))
-    # model.compile(loss='categorical_crossentropy', optimizer='rmsprop', metrics=['accuracy'])
-    # model.summary()
+    model = Sequential()
+    model.add(Flatten(input_shape=(7, 7, 512)))
+    model.add(Dense(n_categories, activation='softmax'))
+    model.compile(loss='categorical_crossentropy', optimizer='rmsprop', metrics=['accuracy'])
+    model.summary()
 
     # Define another model architecture (Model 2)
-    # model = Sequential()
-    # model.add(GlobalAvgPool2D(input_shape=(7, 7, 512)))
-    # model.add(Dense(n_categories, activation='softmax'))
-    # model.compile(loss='categorical_crossentropy', optimizer='rmsprop', metrics=['accuracy'])
-    # model.summary()
+    model = Sequential()
+    model.add(GlobalAvgPool2D(input_shape=(7, 7, 512)))
+    model.add(Dense(n_categories, activation='softmax'))
+    model.compile(loss='categorical_crossentropy', optimizer='rmsprop', metrics=['accuracy'])
+    model.summary()
 
     # Train the model
-    # checkpointer = ModelCheckpoint(filepath='../data/checkpoint/dogvgg16.weights.best.hdf5',
-    #                                verbose=1, save_best_only=True)
+    checkpointer = ModelCheckpoint(filepath='../data/checkpoint/dogvgg16.weights.best.hdf5',
+                                   verbose=1, save_best_only=True)
 
-    # print(train_vgg16)
-    # print(train_vgg16.shape)
-    # print(train_targets.shape)
-    # model.fit(train_vgg16, train_targets, epochs=20, validation_data=(valid_vgg16, valid_targets),
-    #           callbacks=[checkpointer], verbose=1, shuffle=True)
+    print(train_vgg16)
+    print(train_vgg16.shape)
+    print(train_targets.shape)
+    model.fit(train_vgg16, train_targets, epochs=20, validation_data=(valid_vgg16, valid_targets),
+              callbacks=[checkpointer], verbose=1, shuffle=True)
 
 
 def load_data(n_categories, output_directory):
@@ -271,13 +272,16 @@ def load_dataset(n_images, dog_breed_file_name, train_directory, validation_dire
 
     n_splits = 6
 
-    file_name = '{}/dataset_train_0.npz'.format(dataset_directory)
+    file_name = '{}/categories.json'.format(dataset_directory)
     if os.path.exists(file_name):
         print('Loading dataset...')
 
+        with open(file_name) as file:
+            categories = json.load(file)
+
         x_train, x_valid, x_test, train_targets, valid_targets, test_targets = load_saved_dataset(n_splits,
                                                                                                   dataset_directory)
-        return x_train, x_valid, x_test, train_targets, valid_targets, test_targets
+        return categories, x_train, x_valid, x_test, train_targets, valid_targets, test_targets
 
     dog_breed_list = download_image.read_data(dog_breed_file_name)
     n_categories = len(dog_breed_list)
@@ -295,6 +299,12 @@ def load_dataset(n_images, dog_breed_file_name, train_directory, validation_dire
     x_valid = decode_images(valid_files)
     x_test = decode_images(test_files)
 
+    # save categories to json file
+    categories = dict(enumerate(categories, 0))
+    file_name = '{}/categories.json'.format(dataset_directory)
+    with open(file_name, 'w') as outfile:
+        json.dump(categories, outfile)
+
     # split train dataset (to save into smaller files)
     x_train_split = np.split(x_train, n_splits)
     train_targets_split = np.split(train_targets, n_splits)
@@ -308,7 +318,7 @@ def load_dataset(n_images, dog_breed_file_name, train_directory, validation_dire
     file_name = '{}/dataset_valid.npz'.format(dataset_directory)
     np.savez_compressed(file_name, data=x_valid, targets=valid_targets)
 
-    return x_train, x_valid, x_test, train_targets, valid_targets, test_targets
+    return categories, x_train, x_valid, x_test, train_targets, valid_targets, test_targets
 
 
 def load_saved_dataset(n_splits, dataset_directory):

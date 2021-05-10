@@ -22,23 +22,6 @@ import download_image
 import plot
 
 
-def classify_image_resnet50():
-    """Example from Keras of how to classify single image with ResNet50."""
-
-    model = ResNet50(weights='imagenet')
-
-    img_path = '../data/dogs/train/affenpinscher/img_0.jpg'
-    img = image.load_img(img_path, target_size=(224, 224))
-    x = image.img_to_array(img)
-    x = np.expand_dims(x, axis=0)
-    x = preprocess_input(x)
-
-    preds = model.predict(x)
-    # decode the results into a list of tuples (class, description, probability)
-    # (one such list for each sample in the batch)
-    print('Predicted:', decode_predictions(preds, top=3)[0])
-
-
 def classify_image_vgg16():
     """Example from Keras of how to classify single image with ResNet50."""
 

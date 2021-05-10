@@ -47,10 +47,10 @@ with open(file_name) as file:
     categories = json.load(file)
 # print(categories)
 
-model_path = 'app/model'
-model = load_model(model_path)
-# model = VGG16(weights='imagenet')
-print(model.summary())
+# model_path = 'app/model'
+# model = load_model(model_path)
+model = VGG16(weights='imagenet')
+# print(model.summary())
 
 
 @app.route('/', methods=['GET', 'POST'])
@@ -78,6 +78,8 @@ def page_index():
 
 
 def getPrediction(image_data, categories, model, top=3):
+    """Generates output prediction for the input image."""
+
     img = Image.open(BytesIO(base64.b64decode(image_data)))
     img = img.resize((224, 224))
 

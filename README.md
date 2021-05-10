@@ -9,16 +9,16 @@ This project has three components:
 1. Web scrapping of dog images from google.
    See [here](https://github.com/oliveirampo/dog_breed_classification/blob/main/app/scr/download_image.py)
 2. Use of deep learning to image classification.
-3. Deployment of classifier to heroku.
+3. Local API (to be deployed to heroku).
 
 
 ### File Structure
 
-* app/data/
+* data/
     Input files and images required to train the classification model.
-* app/model/
+* model/
     Directory where model is stored.
-* app/scr/
+* scr/
     Directory for script files
 * app/static/
     Directory for static files for API
@@ -44,6 +44,12 @@ Install the packages listed in `requirements.txt` preferably in a virtual enviro
 
 ```python
 pip install -r requirements.txt
+```
+
+### Running
+
+```python
+python run.py
 ```
 
 ### Credits

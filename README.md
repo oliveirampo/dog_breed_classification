@@ -1,4 +1,4 @@
-# Dog Breed Classification
+# Dog Breed Classification (on construction)
 
 This project uses deep learning for dog breed classification.
 
@@ -7,7 +7,7 @@ The [VGG-16 model](https://arxiv.org/abs/1409.1556) is used to classify dog bree
 This project has three components:
 
 1. Web scrapping of dog images from google.
-   See [here](https://github.com/oliveirampo/dog_breed_classification/blob/main/scr/download_image.py)
+   See [here](https://github.com/oliveirampo/dog_breed_classification/blob/main/scr/download_image.py).
 2. Use of deep learning to image classification.
 3. Local API (to be deployed to heroku).
 

@@ -1,32 +1,32 @@
 import matplotlib.pyplot as plt
+import numpy as np
 import cv2
 
 
-def plot_images(n_rows, n_cols, files, targets, categories):
-    """Plot images.
+def plot_images(num_rows, num_cols, num_axes, matrix, labels, categories):
+    """Plot images given matrix.
 
-    :param n_rows: (int) Number of rows.
-    :param n_cols: (int) Number of columns.
-    :param files: (np.arr) List with name of image files.
-    :param categories: (dict)
-    :param targets: (np.arr)
-    :return fig: (Figure object)
+    :param num_rows: (int) Number of rows in plot.
+    :param num_cols: (int) Number of columns in plot.
+    :param num_axes: (int) Number of axes to plot.
+    :param matrix: (2D arr) Matrix with images.
+    :param labels: (arr) Categorical data with possible classes.
+    :param categories: (dict) Name of categories (dog breeds).
+    :return fig: Figure object.
     """
 
-    categories_list = list(categories.values())
-    print(categories_list)
-
     fig = plt.figure(figsize=(20, 10))
-    for i in range(12):
-        ax = fig.add_subplot(n_rows, n_cols, i + 1, xticks=[], yticks=[])
-        # visualize_img(files[i], categories_list[targets[i]][0], ax)
 
-        # TODO - fix here
-        import sys
-        sys.exit(123)
-        print(targets[i])
-        print(categories_list[targets[i]])
-        # print(categories_list[targets[i]][0])
+    for i in range(num_axes):
+        ax = fig.add_subplot(num_rows, num_cols, i + 1, xticks=[], yticks=[])
+        ax.imshow(matrix[i], interpolation='nearest')
+
+        # Get index of item with value == 1. The result is an array of arrays.
+        idx = str(np.where(labels[i] == 1)[0][0])
+        breed = categories[idx]
+        breed = breed.replace('_', ' ').title()
+
+        ax.text(0, -5, breed, fontsize=14)
 
     return fig
 

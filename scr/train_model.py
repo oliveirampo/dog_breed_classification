@@ -171,24 +171,6 @@ def train_transfer_learning_vgg(x_train, y_train, x_validation, y_validation):
     model.fit(x_train, y_train, epochs=10, validation_data=(x_validation, y_validation), verbose=1, shuffle=True)
 
 
-def load_data_from_files(n_categories, output_directory):
-    """Load text files with categories as subfolder names using Keras.
-
-    :param n_categories: (int) Number of categories.
-    :param output_directory: (str) Directory with files.
-    :return:
-        categories: (arr) List of categories.
-        dog_files: (arr) List of files with name of images.
-        dog_targets: (arr) List of targets in categorical shape.
-    """
-
-    data = load_files(output_directory)
-    dog_files = np.array(data['filenames'])
-    dog_targets = np_utils.to_categorical(np.array(data['target']), n_categories)
-    categories = np.array(data['target_names'])
-    return categories, dog_files, dog_targets
-
-
 def decode_images(files):
     """Converts images to matrix.
 
@@ -206,6 +188,24 @@ def decode_images(files):
 
     data = np.array(data) / 224
     return data
+
+
+def load_data_from_files(n_categories, output_directory):
+    """Load text files with categories as subfolder names using Keras.
+
+    :param n_categories: (int) Number of categories.
+    :param output_directory: (str) Directory with files.
+    :return:
+        categories: (arr) List of categories.
+        dog_files: (arr) List of files with name of images.
+        dog_targets: (arr) List of targets in categorical shape.
+    """
+
+    data = load_files(output_directory)
+    dog_files = np.array(data['filenames'])
+    dog_targets = np_utils.to_categorical(np.array(data['target']), n_categories)
+    categories = np.array(data['target_names'])
+    return categories, dog_files, dog_targets
 
 
 def load_non_compressed_dataset(categories, n_splits, train_files, valid_files, test_files, train_targets, test_targets,

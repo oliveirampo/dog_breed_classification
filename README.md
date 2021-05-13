@@ -13,7 +13,8 @@ This project has three components:
 1. Web scrapping of dog images from google.
    See [here](https://github.com/oliveirampo/dog_breed_classification/blob/main/scr/download_image.py).
 2. Use of deep learning to image classification.
-3. [Flask App](https://classify-me-auau.herokuapp.com/) deployed to heroku.
+3. [Flask App](https://classify-me-auau.herokuapp.com/) deployed to
+   [Heroku](https://www.heroku.com).
 
 
 ### File Structure

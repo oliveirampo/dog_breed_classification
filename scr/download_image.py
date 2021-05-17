@@ -1,9 +1,10 @@
 from selenium.webdriver.common.keys import Keys
-from sklearn.datasets import load_files
 from selenium import webdriver
 from bs4 import BeautifulSoup
+import pandas as pd
 import requests
 import certifi
+import zipfile
 import time
 import sys
 import os
@@ -144,14 +145,12 @@ def get_image_name(count, output_directory):
     return image_name
 
 
-def download(keyword_list, n_images, train_directory, validation_directory, test_directory, chromedriver):
+def download(keyword_list, n_images, train_directory, chromedriver):
     """Download images of dogs.
 
     :param keyword_list: (arr) List with dog breeds.
     :param n_images: (int) Maximum number of images to save.
     :param train_directory: (str) Directory for training images.
-    :param validation_directory: (str) Directory for validation images.
-    :param test_directory: (str) Directory for testing images.
     :param chromedriver:
     :return:
     """
@@ -163,66 +162,65 @@ def download(keyword_list, n_images, train_directory, validation_directory, test
     for word in keyword_list:
         search_google(word, n_images, train_directory, chromedriver)
 
-    # create test and validation directories
-    if not os.path.exists(test_directory):
-        os.mkdir(test_directory)
-    if not os.path.exists(validation_directory):
-        os.mkdir(validation_directory)
 
-    for word in keyword_list:
-        get_test_and_validation_images(word, n_images, train_directory, validation_directory, test_directory)
-
-
-def get_test_and_validation_images(word, n_images, train_directory, validation_directory, test_directory):
-    """Move some of the images downloaded to train directory into test and validation directories."""
-
-    src_directory = '{}/{}'.format(train_directory, word.replace(' ', '_'))
-    image_name = get_image_name(n_images - 1, src_directory)
-    if not os.path.exists(image_name):
-        print('Missing image: {}'.format(image_name))
-        sys.exit(1)
-
-    n_train = n_images // 2
-    n_test = n_images // 6
-
-    # the first n_test images will be used to test the model
-    test_images = ['img_{}.jpg'.format(i) for i in range(n_test)]
-    validation_images = ['img_{}.jpg'.format(i) for i in range(n_test, n_train)]
-
-    move_images(word.replace(' ', '_'), train_directory, test_directory, test_images)
-    # move_images(word.replace(' ', '_'), train_directory, validation_directory, validation_images)
-
-
-def move_images(word, train_directory, directory, image_list):
-    """Move image in list from train to test/validation directory."""
-
-    src_directory = '{}/{}'.format(train_directory, word)
-    trg_directory = '{}/{}'.format(directory, word)
-
-    if not os.path.exists(trg_directory):
-        os.mkdir(trg_directory)
+def move_images(count, n_images, word, labels, directory):
+    image_list = ['img_{}.jpg'.format(i) for i in range(n_images)]
 
     for image in image_list:
-        src_image = '{}/{}'.format(src_directory, image)
-        trg_image = '{}/{}'.format(trg_directory, image)
-
+        src_image = '{}/{}/{}'.format(directory, word, image)
         if not os.path.exists(src_image):
-            continue
+            sys.exit('No such file: {}'.format(src_image))
+
+        trg_image = '{}/{}.png'.format(directory, count)
 
         os.rename(src_image, trg_image)
 
+        labels.append([count, word])
+        count += 1
+
+    tmpDir = '{}/{}'.format(directory, word)
+    os.rmdir(tmpDir)
+
+    return count, labels
+
+
+def zipdir(path, ziph):
+    # ziph is zipfile handle
+    for root, dirs, files in os.walk(path):
+        for file in files:
+            ziph.write(os.path.join(root, file),
+                       os.path.relpath(os.path.join(root, file),
+                                       os.path.join(path, '..')))
+
 
 def test():
-    dog_breed_file_name = '../data/inp/dog_breed.txt'
+    dog_breed_file_name = 'data/inp/dog_breed.txt'
     dog_breed_list = read_data(dog_breed_file_name)
+    dog_breed_list = [breed.replace(' ', '_').lower() for breed in dog_breed_list]
 
-    n_images = 10
-    train_directory = '../data/dogs/train'
-    validation_directory = '../data/dogs/validation'
-    test_directory = '../data/dogs/test'
-    chromedriver = '../data/exe/chromedriver_linux64'
+    n_images = 60
+    train_directory = 'data/dogs/train'
+    validation_directory = 'data/dogs/validation'
+    test_directory = 'data/dogs/test'
+    chromedriver = 'data/exe/chromedriver_linux64'
 
-    download(dog_breed_list[:1], n_images, train_directory, validation_directory, test_directory, chromedriver)
+    # download images into sub directories
+    # download(dog_breed_list[:], n_images, train_directory, validation_directory, test_directory, chromedriver)
+
+    # join images to same directory
+    count = 0
+    labels = []
+    for word in dog_breed_list:
+        count, labels = move_images(count, n_images, word, labels, train_directory)
+
+    df = pd.DataFrame(columns=['id', 'breed'], data=labels)
+    file_name = 'data/dogs/labels.csv'
+    df.to_csv(file_name, index=None)
+
+    # zip directory
+    zipf = zipfile.ZipFile('data/dogs/train.zip', 'w', zipfile.ZIP_DEFLATED)
+    zipdir('data/dogs/train', zipf)
+    zipf.close()
 
 
 if __name__ == '__main__':

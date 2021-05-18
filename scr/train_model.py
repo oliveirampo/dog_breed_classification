@@ -20,8 +20,18 @@ import os
 #
 # from tensorflow.keras.models import load_model
 
+from keras.models import Model
+from keras.layers import BatchNormalization, Dense, GlobalAveragePooling2D, Lambda, Dropout, InputLayer, Input
+
 from keras.preprocessing.image import load_img
 from tensorflow.keras.utils import to_categorical
+
+from keras.applications.inception_v3 import InceptionV3
+from keras.applications.inception_v3 import preprocess_input as preprocess_input_inception_v3
+from keras.applications.xception import Xception
+from keras.applications.xception import preprocess_input as preprocess_input_xception
+from keras.applications.inception_resnet_v2 import InceptionResNetV2
+from keras.applications.inception_resnet_v2 import preprocess_input as preprocess_input_inception_resnet_v2
 
 import download_image
 import plot
@@ -239,8 +249,74 @@ def main():
     X, y = images_to_array(train_directory, df, img_size, class_to_num)
 
     # Plot a few examples
-    fig = plot.plot_images(3, 4, 12, X, y, num_to_class)
-    fig.show()
+    # fig = plot.plot_images(3, 4, 12, X, y, num_to_class)
+    # fig.show()
+
+    # Extracting features using InceptionV3
+    img_size = X.shape[1:]
+
+    inception_preprocessor = preprocess_input_inception_v3
+    inception_features = get_features(InceptionV3, inception_preprocessor,
+                                      img_size, X)
+
+    # Extracting features using Xception
+    xception_preprocessor = preprocess_input_xception
+    xception_features = get_features(Xception,
+                                     xception_preprocessor,
+                                     img_size, X)
+
+    # Extracting features using InceptionResnetV2
+    inc_resnet_preprocessor = preprocess_input_inception_resnet_v2
+    inc_resnet_features = get_features(InceptionResNetV2,
+                                       inc_resnet_preprocessor,
+                                       img_size, X)
+
+    # concatenating features
+    final_features = np.concatenate([inception_features,
+                                     xception_features,
+                                     inc_resnet_features, ], axis=-1)
+    print('Final feature maps shape', final_features.shape)
+
+    # Callbacks
+    from keras.callbacks import EarlyStopping
+    EarlyStop_callback = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
+    my_callback = [EarlyStop_callback]
+
+    # Building Model
+    from keras.models import Sequential
+    model = Sequential()
+    model.add(InputLayer(final_features.shape[1:]))
+    model.add(Dropout(0.7))
+    model.add(Dense(y.shape[1], activation='softmax'))
+
+    # Compiling Model
+    model.compile(optimizer='adam',
+                  loss='categorical_crossentropy',
+                  metrics=['accuracy'])
+
+    # Training Model
+    history = model.fit(final_features,
+                        X,
+                        batch_size=32,
+                        epochs=50,
+                        validation_split=0.1,
+                        callbacks=my_callback)
+
+
+def get_features(model_name, data_preprocessor, input_size, data):
+    # Prepare pipeline.
+    input_layer = Input(input_size)
+    preprocessor = Lambda(data_preprocessor)(input_layer)
+    base_model = model_name(weights='imagenet', include_top=False,
+                            input_shape=input_size)(preprocessor)
+    avg = GlobalAveragePooling2D()(base_model)
+    feature_extractor = Model(inputs=input_layer, outputs=avg)
+    # Extract feature.
+    feature_maps = feature_extractor.predict(data, batch_size=32, verbose=1)
+    print('Feature maps shape: ', feature_maps.shape)
+    return feature_maps
+
+
 
 
 if __name__ == '__main__':

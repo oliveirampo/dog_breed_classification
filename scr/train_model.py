@@ -317,7 +317,5 @@ def get_features(model_name, data_preprocessor, input_size, data):
     return feature_maps
 
 
-
-
 if __name__ == '__main__':
     main()

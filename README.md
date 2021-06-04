@@ -36,9 +36,8 @@ This project has three components:
 
 There is also available a Collab
 [Notebook](https://github.com/oliveirampo/dog_breed_classification/blob/main/app/scr/train_model.ipynb)
-with preliminary steps
+with steps
 to perform transfer learning.
-Note that this notebook is still on progress.
 
 ### Prerequisites
 

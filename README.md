@@ -4,8 +4,12 @@ This project uses deep learning for dog breed classification.
 
 Transfer learning using pretrained models,
 such as the
-[VGG-16 model](https://arxiv.org/abs/1409.1556)
-or the [ResNet50 model](https://arxiv.org/abs/1512.03385)
+InceptionV3,
+Xception,
+InceptionResNetV2,
+and
+[VGG-16](https://arxiv.org/abs/1409.1556)
+[models](https://keras.io/api/applications/)
 are used to classify dog breeds.
 
 This project has three components:

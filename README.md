@@ -62,4 +62,5 @@ python run.py
 
 ### Credits
 
-Udacity Data Scientist Nanodegree for providing the guidelines of the project.
+Udacity Data Scientist Nanodegree for providing the guidelines of the project,
+and [khanrahim notebook](https://www.kaggle.com/khanrahim/dog-breed) as inspiration for the deep neural network architecture.

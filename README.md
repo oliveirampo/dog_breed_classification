@@ -1,9 +1,9 @@
-# Dog Breed Classification (on construction)
+# Dog Breed Classification
 
 This project uses deep learning for dog breed classification.
 
 Transfer learning using pretrained models,
-such as the
+such as
 InceptionV3,
 Xception,
 InceptionResNetV2,
@@ -29,13 +29,11 @@ This project has three components:
     Directory where model is stored.
 * scr/
     Directory for script files
-* app/static/
-    Directory for static files for API
-* app/template/
-    Directory with html file
+* flask_app/
+    Directory for flask app
 
 There is also available a Collab
-[Notebook](https://github.com/oliveirampo/dog_breed_classification/blob/main/app/scr/train_model.ipynb)
+[Notebook](https://github.com/oliveirampo/dog_breed_classification/blob/main/train_model.ipynb)
 with steps
 to perform transfer learning.
 
@@ -43,12 +41,17 @@ to perform transfer learning.
 
 Python 3.8.8
 
-The list of packages and recommended versions are listed
-in the file `requirements.txt`
+The list of packages and recommended versions to run the notebook are listed
+in the file `requirements.txt`.
+Note that this notebook can also easily run in the Colab evironment,
+but you need to authorize its access to your Drive.
+
+The list of packages and recommended versions for the flask app
+are listed in the file `flask_app/requirements.txt`
 
 ### Installation
 
-Install the packages listed in `requirements.txt` preferably in a virtual environment.
+Install the packages listed in `flas_app/requirements.txt` preferably in a virtual environment.
 
 ```python
 pip install -r requirements.txt
@@ -56,9 +59,22 @@ pip install -r requirements.txt
 
 ### Running
 
+The notebook can run in the Collab environment.
+
+The flask app can run locally,
+from the flask_app/ directory,
+using the following command
+
 ```python
 python run.py
 ```
+
+Its online version is available
+[here](https://classify-me-auau.herokuapp.com/). 
+Note that, this works just as an example of how the model could be used,
+as the app uses the ResNet50 model, without any modification (further training).
+This choice was made due to memory constraints from Heroku,
+which makes hard to deploy more accurate but also larger models.
 
 ### Credits
 

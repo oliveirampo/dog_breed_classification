@@ -4,8 +4,12 @@ This project uses deep learning for dog breed classification.
 
 Transfer learning using pretrained models,
 such as the
-[VGG-16 model](https://arxiv.org/abs/1409.1556)
-or the [ResNet50 model](https://arxiv.org/abs/1512.03385)
+InceptionV3,
+Xception,
+InceptionResNetV2,
+and
+[VGG-16](https://arxiv.org/abs/1409.1556)
+[models](https://keras.io/api/applications/)
 are used to classify dog breeds.
 
 This project has three components:
@@ -32,9 +36,8 @@ This project has three components:
 
 There is also available a Collab
 [Notebook](https://github.com/oliveirampo/dog_breed_classification/blob/main/app/scr/train_model.ipynb)
-with preliminary steps
+with steps
 to perform transfer learning.
-Note that this notebook is still on progress.
 
 ### Prerequisites
 
@@ -59,4 +62,5 @@ python run.py
 
 ### Credits
 
-Udacity Data Scientist Nanodegree for providing the guidelines of the project.
+Udacity Data Scientist Nanodegree for providing the guidelines of the project,
+and [khanrahim notebook](https://www.kaggle.com/khanrahim/dog-breed) as inspiration for the deep neural network architecture.
